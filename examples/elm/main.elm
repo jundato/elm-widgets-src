@@ -34,14 +34,14 @@ type alias SimulatedAnalogMeterSample = { isVisible : Bool
                                         , properties : SimulatedAnalogMeterProperties
                                         , style : SimulatedAnalogMeterStyle }
 
-type alias KnobSample = { isVisible : Bool 
-                        , properties : KnobProperties 
+type alias KnobSample = { isVisible : Bool
+                        , properties : KnobProperties
                         , style : KnobStyle }
 
 
 ------ DEFAULT MODELS
 -- model for the whole app
-defaultAppState : AppState 
+defaultAppState : AppState
 defaultAppState = { sevenSegmentSample  = defaultSevenSegmentSample
                   , segmentedBarGraphSample = defaultSegmentedBarGraphSample
                   , simulatedAnalogMeterSample = defaultSimulatedAnalogMeterSample
@@ -55,14 +55,14 @@ defaultSevenSegmentSample = { properties = defaultSevenSegmentProperties
                             , pointIndexesText = String.join "," (List.map (\i -> toString i) defaultSevenSegmentProperties.pointIndexes)
                             , colonIndexesText = String.join "," (List.map (\i -> toString i) defaultSevenSegmentProperties.colonIndexes)
                             }
-  
+
 defaultSegmentedBarGraphSample : SegmentedBarGraphSample
-defaultSegmentedBarGraphSample = { isVisible = False
+defaultSegmentedBarGraphSample = { isVisible = True
                                  , properties = defaultSegmentedBarGraphProperties
                                  , style = defaultSegmentBarGraphStyle }
 
 defaultSimulatedAnalogMeterSample : SimulatedAnalogMeterSample
-defaultSimulatedAnalogMeterSample = { isVisible = False
+defaultSimulatedAnalogMeterSample = { isVisible = True
                               , properties = defaultSimulatedAnalogMeterProperties
                               , style = defaultSimulatedAnalogMeterStyle }
 
@@ -72,7 +72,7 @@ defaultKnobSample = { isVisible = True
                     , style = defaultKnobStyle }
 
 -- actions
-type Action 
+type Action
   = NoOp
   | SeventSegmentTextChange String
   | SeventSegmentPointsChange String
@@ -86,39 +86,40 @@ update : Action -> AppState -> AppState
 update action appState =
   case action of
     NoOp -> appState
-    SeventSegmentTextChange value -> 
-      let sevenSegmentSample' = appState.sevenSegmentSample 
+    SeventSegmentTextChange value ->
+      let sevenSegmentSample' = appState.sevenSegmentSample
           properties' = sevenSegmentSample'.properties
-      in { appState | sevenSegmentSample <- { sevenSegmentSample' | properties <- { properties' | digits <- value } } }
+      in { appState | sevenSegmentSample = { sevenSegmentSample' | properties = { properties' | digits = value } } }
     SeventSegmentPointsChange value ->
       let sevenSegmentSample' = appState.sevenSegmentSample
           properties' = sevenSegmentSample'.properties
           convert digit = (Maybe.withDefault -1 (Result.toMaybe (String.toInt digit )))
           pointIndexes' = (List.filter (\y -> y /= -1 ) (List.map (\x -> convert x ) (String.split "," value)))
-      in { appState | sevenSegmentSample <- { sevenSegmentSample' | properties <- { properties' | pointIndexes <- pointIndexes' }                                                            , pointIndexesText <- value }}
+      in { appState | sevenSegmentSample = { sevenSegmentSample'  | properties = { properties' | pointIndexes = pointIndexes' }
+                                                                  , pointIndexesText = value }}
     SeventSegmentColonsChange value ->
       let sevenSegmentSample' = appState.sevenSegmentSample
           properties' = sevenSegmentSample'.properties
           convert digit = (Maybe.withDefault -1 (Result.toMaybe (String.toInt digit )))
           colonIndexes' = (List.filter (\y -> y /= -1 ) (List.map (\x -> convert x ) (String.split "," value)))
-      in { appState | sevenSegmentSample <- { sevenSegmentSample' | properties <- { properties' | colonIndexes <- colonIndexes' }
-                                                                  , colonIndexesText <- value }}
+      in { appState | sevenSegmentSample = { sevenSegmentSample'  | properties = { properties' | colonIndexes = colonIndexes' }
+                                                                  , colonIndexesText = value }}
     SegmentedBarGraphValueChange value ->
       let segmentedBarGraphSample' = appState.segmentedBarGraphSample
           properties' = segmentedBarGraphSample'.properties
-      in { appState | segmentedBarGraphSample <- { segmentedBarGraphSample' | properties <- { properties' | currentValue <- convertToInt value } } }
+      in { appState | segmentedBarGraphSample = { segmentedBarGraphSample' | properties = { properties' | currentValue = convertToInt value } } }
     SimulatedAnalogMeterValueChange value ->
       --appState
       let simulatedAnalogMeterSample' = appState.simulatedAnalogMeterSample
           properties' = simulatedAnalogMeterSample'.properties
-      in { appState | simulatedAnalogMeterSample <- { simulatedAnalogMeterSample' | properties <- { properties' | currentValue <- convertToInt value } } }
---- 
+      in { appState | simulatedAnalogMeterSample = { simulatedAnalogMeterSample' | properties = { properties' | currentValue = convertToInt value } } }
+---
 
 
 --- entry point
 main : Signal Element
 main =
-  Signal.map2 (appView actions.address) appState Window.dimensions 
+  Signal.map2 (appView actions.address) appState Window.dimensions
 
 -- manage the appState of our application over time
 appState : Signal AppState
@@ -131,7 +132,7 @@ actions =
   Signal.mailbox NoOp
 
 mergedActions : Signal Action
-mergedActions = Signal.mergeMany [ actions.signal ]  
+mergedActions = Signal.mergeMany [ actions.signal ]
 
 appView :Address Action -> AppState -> (Int,Int) -> Element
 appView address appState (w,h) = div [] [ sevenSegmentSampleView address appState.sevenSegmentSample
@@ -142,7 +143,7 @@ appView address appState (w,h) = div [] [ sevenSegmentSampleView address appStat
 sevenSegmentSampleView : Address Action -> SevenSegmentSample -> Html
 sevenSegmentSampleView address sevenSegmentSample' =
   let properties = sevenSegmentSample'.properties
-  in  div [ style [if sevenSegmentSample'.isVisible then ("","") else ("display","none")] ] 
+  in  div [ style [if sevenSegmentSample'.isVisible then ("","") else ("display","none")] ]
           [ div [ ] [ text "SEVENT SEGMENT EXAMPLE" ]
           , div [ Html.Attributes.style [("width","400px"),("height", "68px")] ]
                 [ sevenSegment sevenSegmentSample'.properties sevenSegmentSample'.style ]
@@ -167,7 +168,7 @@ sevenSegmentSampleView address sevenSegmentSample' =
 segmentedBarGraphView : Address Action -> SegmentedBarGraphSample -> Html
 segmentedBarGraphView address segmentedBarGraphSample =
   let properties = segmentedBarGraphSample.properties
-  in  div [ style [if segmentedBarGraphSample.isVisible then ("","") else ("display","none")] ] 
+  in  div [ style [if segmentedBarGraphSample.isVisible then ("","") else ("display","none")] ]
           [ div [ ] [ text "SEGMENTED BAR GRAPH SAMPLE" ]
           , div [ Html.Attributes.style [("width","400px"),("height", "68px")] ]
                 [ segmentedBarGraph segmentedBarGraphSample.properties segmentedBarGraphSample.style  ]
@@ -177,23 +178,23 @@ segmentedBarGraphView address segmentedBarGraphSample =
                                 , on "input" targetValue (Signal.message address << SegmentedBarGraphValueChange) ][ ] ] ]
 
 simulatedAnalogMeterView : Address Action -> SimulatedAnalogMeterSample -> Html
-simulatedAnalogMeterView address sample = 
+simulatedAnalogMeterView address sample =
   let properties = sample.properties
-  in  div [ style [if sample.isVisible then ("","") else ("display","none")] ] 
+  in  div [ style [if sample.isVisible then ("","") else ("display","none")] ]
           [ div [ ] [ text "SIMULATED ANALOG METER VIEW" ]
           , div [ Html.Attributes.style [("width","400px"),("height", "136px")] ]
                 [ simulatedAnalogMeter sample.properties sample.style  ]
           , div [ ] [ text "VALUE"
-                    , input [ type' "text" 
+                    , input [ type' "text"
                             , value (toString properties.currentValue)
                             , on "input" targetValue (Signal.message address << SimulatedAnalogMeterValueChange) ] [ ] ] ]
- 
+
 
 knobView : Address Action -> KnobSample -> Html
 knobView address sample =
   let properties = sample.properties
-  in  div [ style [if sample.isVisible then ("","") else ("display","none")] ] 
-          [ div [ ] [ text "KNOB VIEW"] 
+  in  div [ style [if sample.isVisible then ("","") else ("display","none")] ]
+          [ div [ ] [ text "KNOB VIEW"]
           , div [ Html.Attributes.style [("width","400px"),("height", "400px")] ]
                 [ knob sample.properties sample.style ]]
 
@@ -201,4 +202,3 @@ knobView address sample =
 --helpers
 convertToInt : String -> Int
 convertToInt digit = (Maybe.withDefault 0 (Result.toMaybe (String.toInt digit )))
-
